@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%); /* Blue/Purple Gradient */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            color: #fff;
+        }
+        /* Main Container */
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        /* Titles and Text */
+        .title {
+            font-size: 2.5em;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px #3f2b96;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            font-weight: 300;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+        /* Countdown Display */
+        .countdown-display {
+            padding: 20px 0;
+        }
+        .days {
+            font-size: 5em;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 5px;
+            color: #ffeba3; /* Bright Yellow */
+            animation: breathe 4s infinite ease-in-out;
+        }
+        .days-label {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+        /* Reminder Button */
+        .reminder-btn {
+            background-color: #ff6b6b; /* Vibrant Red */
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-top: 20px;
+        }
+        .reminder-btn:hover {
+            background-color: #ff4747;
+            transform: translateY(-2px);
+        }
+
+        /* Birthday Celebration Style */
+        {% if data.is_birthday %}
+        .days {
+            color: #ff007f; /* Party Pink */
+            font-size: 3em; 
+            animation: none;
+            margin: 20px 0;
+        }
+        .container {
+            border: 5px solid #ff007f;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        .title, .subtitle {
+            color: #ff007f;
+            text-shadow: none;
+        }
+        {% endif %}
+
+        /* Keyframe Animations */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">{{ data.title }}</div>
+        
+        {% if data.is_birthday %}
+            <div class="days">{{ data.message }}</div>
+        {% else %}
+            <div class="countdown-display">
+                <div class="days">{{ data.days_left }}</div>
+                <div class="days-label">Days Left</div>
+            </div>
+            
+            <div class="subtitle">{{ data.message }}</div>
+
+            <button class="reminder-btn" onclick="addToCalendar('{{ person_name }}\'s Birthday', '{{ data.message }}')">
+                <span style="margin-right: 8px;">🔔</span> Add to Calendar
+            </button>
+        {% endif %}
+    </div>
+
+    <script>
+        // Set JavaScript constants using Jinja
+        const JS_BIRTH_MONTH = {{ BIRTH_MONTH }}; // Correctly passes the integer
+        const JS_BIRTH_DAY = {{ BIRTH_DAY }};     // Correctly passes the integer
+        const IS_BIRTHDAY = {{ data.is_birthday | lower }}; // Passes Python True/False as JavaScript true/false
+        
+        // JavaScript for the "Add to Calendar" reminder feature
+        function addToCalendar(title, description) {
+            
+            // The person's birthday is fixed (month and day come from Python config)
+            const birthMonth = JS_BIRTH_MONTH;
+            const birthDay = JS_BIRTH_DAY;
+            
+            // Logic to determine the target year
+            let targetYear = new Date().getFullYear();
+            const today = new Date();
+            
+            // Check if today is past the birthday for the current year (Month is 0-indexed in JS)
+            // Note: Current time is Oct 2025. This logic is crucial for correct year calculation.
+            if (today.getMonth() + 1 > birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() > birthDay)) {
+                targetYear += 1;
+            }
+            
+            // Format the date string for the calendar link (YYYYMMDD)
+            const monthStr = String(birthMonth).padStart(2, '0');
+            const dayStr = String(birthDay).padStart(2, '0');
+            
+            const dateStr = targetYear + monthStr + dayStr;
+
+            // Create a simple, browser-friendly link for Google Calendar
+            const calendarLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dateStr}/${dateStr}&details=${encodeURIComponent(description)}&sf=true&output=xml`;
+
+            window.open(calendarLink, '_blank');
+        }
+
+        // Only add the event listener for the reminder button if it's not the birthday
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!IS_BIRTHDAY) {
+                const reminderButton = document.querySelector('.reminder-btn');
+                // The arguments for addToCalendar (title, description) are already passed directly 
+                // in the HTML element's 'onclick' attribute, so no need for further setup here.
+            }
+        });
+    </script>
+</body>
+</html>
